@@ -1,7 +1,6 @@
-// NFTAuction.js
 import React, { useState, useEffect } from "react";
 import Web3 from "web3";
-const AuctionContract = require("../Abis.json");
+const CONTRACT_BUILD = require("../Abis.json");
 
 export const web3 = new Web3(window.web3 && window.web3.currentProvider);
 
@@ -10,7 +9,7 @@ const NFTAuction = () => {
   const [contract, setContract] = useState(null);
   const [account, setAccount] = useState(null);
   const [nfts, setNFTs] = useState([]);
-  const [bidAmount, setBidAmount] = useState(""); 
+  const [bidAmount, setBidAmount] = useState("");
 
   useEffect(() => {
     async function initWeb3() {
@@ -24,48 +23,58 @@ const NFTAuction = () => {
         setAccount(accounts[0]);
 
         const contractInstance = new web3Instance.eth.Contract(
-          AuctionContract,
-          "0xf84c93B960D45918936598f5D513B5F5aC0A905d"
+          CONTRACT_BUILD.AuctionAbi,
+          "0x6e4eaF622f64fac61f43AC75EED3e3962650fD24"
         );
         console.log(contractInstance);
         setContract(contractInstance);
+        await fetchNFTs();
       } else {
         console.error("Web3 not found");
       }
     }
-
     initWeb3();
   }, []);
 
   const fetchNFTs = async () => {
-    if (contract && web3) {
+    if (contract) {
+      console.log("function called");
       const nftList = [];
-      const tokenCount = await contract.methods.totalSupply().call();
-  
-      for (let i = 0; i < tokenCount; i++) {
-        const tokenId = await contract.methods.tokenByIndex(i).call();
-        const nft = await contract.methods.nfts(tokenId).call();
-        nftList.push({ tokenId, ...nft });
+
+      const totalNFTs = await contract.methods.totalNFTs().call();
+      console.log(totalNFTs);
+
+      for (let i = 0; i < totalNFTs; i++) {
+        try {
+          console.log("called");
+          const tokenId = i;
+          const nft = await contract.methods.nfts(tokenId).call();
+          nftList.push({ tokenId, ...nft });
+        } catch (error) {
+          break; // Stop the loop if there's an error
+        }
       }
-  
+      console.log(nftList);
       setNFTs(nftList);
     }
   };
 
+
   const placeBid = async (tokenId) => {
     if (contract && web3 && bidAmount !== "") {
-      const bidValue = web3.utils.toWei(bidAmount, "ether");
-      await contract.methods.placeBid(tokenId).send({ from: account, value: bidValue });
-      setBidAmount(""); 
+      console.log(bidAmount);
+      // const bidValue = web3.utils.toWei(bidAmount, "ether");
+      await contract.methods.placeBid(tokenId).send({ from: account, value: bidAmount });
+      setBidAmount("");
+      window.location.reload();
     }
   };
 
   return (
     <div>
       <h1>NFT Auction</h1>
-      <button onClick={fetchNFTs}>Fetch NFTs</button>
       <div>
-        {nfts.map((nft) => (
+        {nfts && nfts.map((nft) => (
           <div key={nft.tokenId}>
             <h3>{nft.name}</h3>
             <p>Description: {nft.description}</p>

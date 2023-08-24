@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState, useEffect } from "react";
 import NFTAuction from "./components/NFTAuction";
 
@@ -9,6 +8,7 @@ const App = () => {
     async function loadWeb3() {
       if (window.ethereum) {
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        console.log(account);
         setAccount(accounts[0]);
       } else {
         console.error("Web3 not found");
